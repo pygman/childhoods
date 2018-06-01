@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+<head>
+    <title>jump</title>
+</head>
+<body style="float: left;position: relative;text-align: left;left: 50%;">
+<div style="position: absolute;left: -50%;">
+    <svg width="800px" height="800px" version="1.1"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <line x1="100" y1="100" x2="700" y2="100" style="stroke:rgb(99,99,99);stroke-width:4"></line>
+        <line x1="100" y1="700" x2="700" y2="700" style="stroke:rgb(99,99,99);stroke-width:4"></line>
+        <line x1="100" y1="100" x2="100" y2="700" style="stroke:rgb(99,99,99);stroke-width:4"></line>
+        <line x1="100" y1="100" x2="700" y2="700" style="stroke:rgb(99,99,99);stroke-width:4"></line>
+        <line x1="100" y1="700" x2="700" y2="100" style="stroke:rgb(99,99,99);stroke-width:4"></line>
+    </svg>
+</div>
+<div style="position: absolute;left: -50%; width: 800px;height: 800px">
+    <div id="r0" draggable="true"
+         style="position: absolute;width: 100px;height: 100px;opacity: 0.4;background-color: red;left: 50px;top: 50px;border-radius: 100px"></div>
+    <div id="r1" draggable="true"
+         style="position: absolute;width: 100px;height: 100px;opacity: 0.4;background-color: red;left: 650px;top: 50px;border-radius: 100px"></div>
+    <div id="b0" draggable="true"
+         style="position: absolute;width: 100px;height: 100px;opacity: 0.4;background-color: blue;left: 50px;top: 650px"></div>
+    <div id="b1" draggable="true"
+         style="position: absolute;width: 100px;height: 100px;opacity: 0.4;background-color: blue;left: 650px;top: 650px"></div>
+</div>
+<input type="checkbox" id="auto" style="position: absolute;top: 800px;width: 50px;height: 50px" checked="checked"/>
+<div style="position: absolute;top: 800px;left: 80px;">Auto</div>
+<style>
+    .turn {
+        border: solid black 4px;
+        opacity: 1 !important;
+    }
+</style>
+<script type="application/javascript">
+    var redTurn = false;
+    var r0 = document.getElementById("r0");
+    var r1 = document.getElementById("r1");
+    var b0 = document.getElementById("b0");
+    var b1 = document.getElementById("b1");
+    var auto = document.getElementById("auto");
+    var men = [r0, r1, b0, b1];
+    var pArr = [null, r1, r0, b0, b1];
+
+    /*
+    r0 ------r1
+     | \   /
+     |   0
+     | /   \
+    b0 ------b1
+     */
+
+    /*
+     2 ------1
+     | \   /
+     |   0
+     | /   \
+     3 ------4
+     */
+    r0.name = 'r0';
+    r1.name = 'r1';
+    b0.name = 'b0';
+    b1.name = 'b1';
+    r0.isRed = true;
+    r1.isRed = true;
+    b0.isRed = false;
+    b1.isRed = false;
+
+    for (var i in men) {
+        var man = men[i];
+        man.ondragend = function (event) {
+            if (this.isRed != redTurn)return;
+            var x = P[this.p].x + event.offsetX;
+            var y = P[this.p].y + event.offsetY;
+            var min = 1000000;
+            var minIndex = this.p;
+            for (var j in P) {
+                var dis = Math.pow(P[j].x - x, 2) + Math.pow(P[j].y - y, 2);
+                if (dis <= min) {
+                    min = dis;
+                    minIndex = parseInt(j);
+                }
+            }
+            if (judgeMove(this.p, minIndex)) {
+                this.moveTo(minIndex);
+                turn();
+            }
+        };
+    }
+
+    var judgeMove = function (a, b) {
+        if (a == b) return false;
+        for (var i in men) {
+            var man = men[i];
+            if (man.p == b) return false;
+        }
+        return judgeMoveMat[a][b];
+    };
+    var turn = function () {
+        if (redTurn = !redTurn) {
+            r0.className = 'turn';r1.className = 'turn';b0.className = '';b1.className = '';
+        } else {
+            r0.className = '';r1.className = '';b0.className = 'turn';b1.className = 'turn';
+        }
+        if (judgeSuccess()) {
+            reset();
+        } else if (auto.checked && !redTurn) {
+            autoBlue();
+            turn();
+        }
+    };
+    auto.onclick = function () {
+        if (auto.checked && !redTurn) {
+            autoBlue();
+            turn();
+        }
+    };
+
+    var autoBlue = function () {
+        var p0 = b0.p;
+        var p1 = b1.p;
+
+        var moveToOnlyLeft = function (first, second) {
+            for (var i in judgeMoveMat[first.p]) {
+                if (judgeMoveMat[first.p][i] && pArr[i] == null) {
+                    first.moveTo(i);
+                    return;
+                }
+            }
+            for (var i in judgeMoveMat[second.p]) {
+                if (judgeMoveMat[second.p][i] && pArr[i] == null) {
+                    second.moveTo(i);
+                    return;
+                }
+            }
+        };
+        if (p0 == 0) {
+            moveToOnlyLeft(b1, b0);
+        } else if (p1 == 0) {
+            moveToOnlyLeft(b0, b1);
+        } else if ((p0 == 1 && p1 == 2 || p0 == 4 && p1 == 3) && pArr[0] == null) {
+            b1.moveTo(0);
+        } else if ((p0 == 2 && p1 == 1 || p0 == 3 && p1 == 4) && pArr[0] == null) {
+            b0.moveTo(0);
+        } else if (p0 == 2 || p0 == 3) {
+            moveToOnlyLeft(b0, b1);
+        } else moveToOnlyLeft(b1, b0);
+    };
+    var judgeSuccess = function () {
+        var rSum = parseInt(men[0].p) + parseInt(men[1].p);
+        var bSum = parseInt(men[2].p) + parseInt(men[3].p);
+        if (bSum == 7 && rSum == 2 && !redTurn) alert('red win!');
+        else if (rSum == 7 && bSum == 2 && redTurn) alert('blue win!');
+        else if (rSum == 3 && bSum == 3) {
+            if (pArr[0].isRed && !redTurn) alert('red win');
+            else if (redTurn) alert('blue win!');
+        }
+        else return false;
+        return true;
+    };
+    var reset = function () {
+        window.location.reload();
+    };
+
+    var judgeMoveMat = [
+        [false, true, true, true, true],
+        [true, false, true, false, false],
+        [true, true, false, true, false],
+        [true, false, true, false, true],
+        [true, false, false, true, false]
+    ];
+    P = [
+        {x: 350, y: 350},
+        {x: 650, y: 50},
+        {x: 50, y: 50},
+        {x: 50, y: 650},
+        {x: 650, y: 650}
+    ];
+    Element.prototype.moveTo = function (p) {
+        this.style.left = P[p].x + 'px';
+        this.style.top = P[p].y + 'px';
+        pArr[this.p] = null;
+        pArr[p] = this;
+        this.p = p;
+    };
+    r0.p = 2;
+    r1.p = 1;
+    b0.p = 3;
+    b1.p = 4;
+    r0.moveTo(2);
+    r1.moveTo(1);
+    b0.moveTo(3);
+    b1.moveTo(4);
+    turn();
+
+
+</script>
+</body>
+</html>
